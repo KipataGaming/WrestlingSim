@@ -579,3 +579,70 @@ button:hover {
     border-radius: 2px;
     margin-left: 4px;
 }
+
+/* ========================================
+   CONTRACT TALKS PANEL (replaces old confirm() spam)
+   ======================================== */
+#contract-talks-panel {
+    background: #141414;
+}
+
+.contract-demand-card {
+    background: #0f0f0f;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.contract-demand-card .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.contract-demand-card .wrestler-name {
+    font-weight: 600;
+    color: #ffcc66;
+}
+
+.contract-demand-card .raise {
+    font-size: 0.9em;
+    color: #ff6666;
+    font-weight: 600;
+}
+
+.contract-demand-card .demands {
+    font-size: 0.85em;
+    color: #ccc;
+    margin: 6px 0 10px;
+    line-height: 1.3;
+}
+
+.contract-demand-card .actions {
+    display: flex;
+    gap: 8px;
+}
+
+.contract-demand-card button {
+    flex: 1;
+    padding: 6px 10px;
+    font-size: 0.85em;
+}
+
+.contract-demand-card .btn-accept {
+    background: #0a2a0a;
+    border-color: #39ff14;
+    color: #39ff14;
+}
+
+.contract-demand-card .btn-reject {
+    background: #2a0a0a;
+    border-color: #ff6666;
+    color: #ff6666;
+}
+
+.contract-demand-card.resolved {
+    opacity: 0.6;
+    border-color: #222;
+}

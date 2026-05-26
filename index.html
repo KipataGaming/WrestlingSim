@@ -16,7 +16,8 @@
             <!-- Beta notice - visible on launch for testers -->
             <div class="beta-banner">
                 <strong>Beta v0.9</strong> — Core loop (Roster → Book 6 segments with clear CURRENT SHOW CARD → Broadcast) is functional.<br>
-                The show card visibility and results labeling have been improved. Please test full shows and report feedback on booking feel + post-show clarity.
+                The show card visibility and results labeling have been improved. Please test full shows and report feedback on booking feel + post-show clarity.<br>
+                <strong>See BETA_TESTING.md</strong> (in the game folder) for known issues + recommended test flow.
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px;">
@@ -69,6 +70,49 @@
                 <button onclick="refreshMarket()" style="margin-top: 12px; font-size: 0.8em;">RE-SCOUT ($100)</button>
             </div>
         </div>
+
+        <!-- Create New Wrestler section (text + dropdown based) -->
+        <div class="card" style="margin-top: 20px;">
+            <h3>CREATE NEW WRESTLER</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 12px;">
+                <div>
+                    <label style="font-size:0.75em; color:#888;">Name</label>
+                    <input id="create-name" type="text" value="New Talent" style="width:100%;">
+                </div>
+                <div>
+                    <label style="font-size:0.75em; color:#888;">Alignment</label>
+                    <select id="create-alignment" style="width:100%;"></select>
+                </div>
+                <div>
+                    <label style="font-size:0.75em; color:#888;">Archetype</label>
+                    <select id="create-archetype" style="width:100%;"></select>
+                </div>
+                <div>
+                    <label style="font-size:0.75em; color:#888;">Legend Icon (emoji/symbol)</label>
+                    <input id="create-icon" type="text" value="★" style="width:100%;">
+                </div>
+                <div>
+                    <label style="font-size:0.75em; color:#888;">Starting Pop</label>
+                    <input id="create-pop" type="number" value="22" min="5" max="60" style="width:100%;">
+                </div>
+                <div>
+                    <label style="font-size:0.75em; color:#888;">Starting Stamina</label>
+                    <input id="create-stamina" type="number" value="95" min="50" max="100" style="width:100%;">
+                </div>
+                <div>
+                    <label style="font-size:0.75em; color:#888;">Starting Happiness</label>
+                    <input id="create-happiness" type="number" value="75" min="30" max="100" style="width:100%;">
+                </div>
+                <div>
+                    <label style="font-size:0.75em; color:#888;">Weekly Salary</label>
+                    <input id="create-salary" type="number" value="110" min="50" max="500" style="width:100%;">
+                </div>
+            </div>
+            <button onclick="createNewWrestler()" style="margin-top: 8px;">CREATE &amp; ADD TO ROSTER</button>
+            <div style="font-size:0.7em; color:#666; margin-top:6px;">
+                All fields are data-driven. New wrestlers start with no active workouts.
+            </div>
+        </div>
     </div>
 
     <!-- TAB: BOOKING -->
@@ -108,7 +152,7 @@
 
             <div style="margin-top: 10px;">
                 <label style="font-size:0.8em;">
-                    <input type="checkbox" id="is-ppv"> This is a PAY-PER-VIEW (triggers contract talks)
+                    <input type="checkbox" id="is-ppv"> This is a PAY-PER-VIEW (triggers contract talks — old-style dialogs)
                 </label>
             </div>
 
@@ -124,6 +168,7 @@
                     <div class="show-card-meta">
                         <span class="segment-count"><span id="card-count">0</span><span class="max">/6</span></span>
                         <button onclick="clearCard()" class="small-btn">CLEAR ALL</button>
+                        <button onclick="previewLiveRisks()" class="small-btn" title="Preview potential live events for this card">CHECK RISKS</button>
                     </div>
                 </div>
 
@@ -134,6 +179,15 @@
                 <button id="execute-show-btn" class="broadcast-btn" disabled>
                     ▶ BROADCAST LIVE SHOW (6 SEGMENTS REQUIRED)
                 </button>
+            </div>
+        </div>
+
+        <!-- CONTRACT TALKS - In-page replacement for old blocking confirm() dialogs after PPV -->
+        <div id="contract-talks-panel" class="card" style="display: none; border-color: #ffaa00; margin-top: 20px;">
+            <h3 style="color:#ffaa00;">POST-PPV CONTRACT TALKS</h3>
+            <div id="contract-talks-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
+            <div style="margin-top: 12px; font-size: 0.85em; color:#888;">
+                Resolve all negotiations before booking the next show. Accepting costs money now but prevents walkouts and refusing wrestlers.
             </div>
         </div>
 
@@ -529,113 +583,37 @@
                 }
             }
 
-            document.getElementById('card-count').innerText = activeCard.length;
-            const rundown = document.getElementById('card-rundown');
-            rundown.innerHTML = '';
-            
-            if (activeCard.length === 0) {
-                rundown.innerHTML = '<div style="color:#666; padding:10px 0;">No segments booked yet. Add matches below.</div>';
-                return;
+            // Populate Create New Wrestler form dropdowns (data-driven)
+            const alignSel = document.getElementById('create-alignment');
+            const archSel = document.getElementById('create-archetype');
+            if (alignSel) {
+                alignSel.innerHTML = '';
+                ALIGNMENTS.forEach(a => {
+                    const opt = document.createElement('option');
+                    opt.value = a;
+                    opt.textContent = a.toUpperCase();
+                    alignSel.appendChild(opt);
+                });
+                alignSel.value = 'face';
             }
-            
-            activeCard.forEach((match, i) => {
-                let matchText = match.isTag 
-                    ? `${state.roster[match.a].name} & ${state.roster[match.a2].name} vs ${state.roster[match.b].name} & ${state.roster[match.b2].name}`
-                    : `${state.roster[match.a].name} vs ${state.roster[match.b].name}`;
-                
-                // Build a clearer segment line
-                let extra = [];
-                if (match.stakes && match.stakes !== 'exhibition') extra.push(match.stakes.toUpperCase());
-                if (match.promo) extra.push('PROMO');
-                if (match.weapons) extra.push('WEAPONS');
-                if (match.refBump) extra.push('REF BUMP');
-                if (match.runIn) extra.push('RUN-IN');
-                
-                let extraText = extra.length > 0 ? ` [${extra.join(', ')}]` : '';
-                
-                // Build extras as clean tags
-                let extraTags = '';
-                if (extra.length > 0) {
-                    extraTags = extra.map(e => `<span class="extras-tag">${e}</span>`).join(' ');
-                }
+            if (archSel) {
+                archSel.innerHTML = '';
+                ARCHETYPES.forEach(a => {
+                    const opt = document.createElement('option');
+                    opt.value = a;
+                    opt.textContent = getArchetypeDisplay(a);
+                    archSel.appendChild(opt);
+                });
+                archSel.value = ARCHETYPES[0];
+            }
 
-                rundown.innerHTML += `
-                    <div class="rundown-item">
-                        <div class="match-text">
-                            <span class="seg-label">[SEG ${i+1}]</span>
-                            ${matchText}
-                            <span class="match-type">(${match.type.toUpperCase()})</span>
-                            ${extraTags}
-                        </div>
-                        <div class="controls">
-                            <button onclick="moveSegment(${i}, -1)" title="Move up">↑</button>
-                            <button onclick="moveSegment(${i}, 1)" title="Move down">↓</button>
-                            <button onclick="removeSegment(${i})" title="Remove segment" style="color:#ff6666; border-color:#ff6666;">X</button>
-                        </div>
-                    </div>`;
-            });
-
-            const hasRoster = state.roster && state.roster.length > 0;
-            document.getElementById('add-card-btn').disabled = !hasRoster || activeCard.length >= 6;
-            document.getElementById('execute-show-btn').disabled = !hasRoster || activeCard.length < 6;
-            updateTicker();
+            // CURRENT SHOW CARD rendering now lives in js/ui.js (extracted during the split)
+            if (typeof renderRundown === 'function') renderRundown();
         }
 
+        // The heavy lifting for adding a segment now lives in js/booking.js
         document.getElementById('add-card-btn').addEventListener('click', () => {
-            let type = document.getElementById('match-type').value;
-            let isTag = type === 'tag';
-            
-            const selA = document.getElementById('wrestler-a');
-            const selB = document.getElementById('wrestler-b');
-            const selA2 = document.getElementById('wrestler-a2');
-            const selB2 = document.getElementById('wrestler-b2');
-
-            if (!state.roster || state.roster.length === 0) {
-                alert("You have no wrestlers! Sign some talent in Operations first.");
-                return;
-            }
-
-            let iA = parseInt(selA ? selA.value : -1);
-            let iB = parseInt(selB ? selB.value : -1);
-            let iA2 = parseInt(selA2 ? selA2.value : -1);
-            let iB2 = parseInt(selB2 ? selB2.value : -1);
-
-            // Check for wrestlers who refuse to work (extremely low happiness)
-            const selectedIndices = [iA, iB, iA2, iB2].filter(i => !isNaN(i) && i >= 0);
-            const refusingWrestlers = selectedIndices
-                .map(i => state.roster[i])
-                .filter(w => w && w.happiness < 22);
-
-            if (refusingWrestlers.length > 0) {
-                alert(`These wrestlers are refusing to work (happiness too low):\n\n` + 
-                      refusingWrestlers.map(w => `• ${w.name} (Happiness: ${w.happiness})`).join('\n') +
-                      `\n\nYou must improve their mood through Medical, promos, or contract talks first.`);
-                return;
-            }
-
-            let uniqueCheck = new Set([iA, iB]);
-            if(isTag) {
-                uniqueCheck.add(iA2); uniqueCheck.add(iB2);
-                if(uniqueCheck.size !== 4) return alert("Wrestlers cannot be booked against themselves in a tag match!");
-            } else {
-                if(iA === iB) return alert("Cannot book a wrestler against themselves!");
-            }
-
-            let matchConfig = {
-                type: type, isTag: isTag,
-                a: iA, b: iB, a2: iA2, b2: iB2,
-                stakes: document.getElementById('match-stakes').value,
-                promo: document.getElementById('spot-promo').checked,
-                weapons: document.getElementById('spot-weapons').checked,
-                refBump: document.getElementById('spot-ref').checked,
-                runIn: document.getElementById('spot-runin').checked
-            };
-
-            activeCard.push(matchConfig);
-            document.querySelectorAll('.match-spot').forEach(cb => cb.checked = false);
-            updateUI();
-            // Explicit refresh of the prominent show card in case updateUI doesn't cover it after the split
-            if (typeof renderRundown === 'function') renderRundown();
+            addSegmentToCard();
         });
 
         document.getElementById('execute-show-btn').addEventListener('click', () => {
@@ -849,16 +827,14 @@
 
             log(`FINANCE: +$${Math.floor(showRevenue)} | -$${payroll} | NET: <span style="color:${netProfit > 0 ? 'var(--main-green)' : '#f44'}">$${Math.floor(netProfit)}</span>`);
 
-            // === CONTRACT NEGOTIATIONS AFTER PPV (Enhanced) ===
+            // === CONTRACT NEGOTIATIONS AFTER PPV (now uses in-page panel, no more blocking confirms) ===
             const isPPV = document.getElementById('is-ppv')?.checked;
             if (isPPV) {
                 let demandingWrestlers = state.roster.filter(w => w.happiness < 60);
                 
                 if (demandingWrestlers.length > 0) {
-                    log(`<b>— POST-PPV CONTRACT TALKS —</b>`);
-                    
-                    demandingWrestlers.forEach(w => {
-                        // === Demand Calculation (High pop + bad attitude = much more demanding) ===
+                    // Build detail objects for the new in-page Contract Talks UI
+                    const demandingDetails = demandingWrestlers.map(w => {
                         const popFactor = Math.floor(w.pop / 10);
                         const happinessFactor = Math.floor((70 - w.happiness) / 2.5);
                         const badAttitude = (w.happiness < 30) ? 3 : (w.happiness < 45 ? 1 : 0);
@@ -867,48 +843,21 @@
                         const totalDemand = Math.max(1, popFactor + happinessFactor + badAttitude);
                         const demandedRaise = Math.floor(baseRaise * (1 + totalDemand * 0.13));
 
-                        // Generate flavorful, specific demands
                         let demands = [];
                         if (w.pop >= 70) demands.push("a major push and more main event time");
                         if (w.happiness < 35) demands.push("more creative control and better promo time");
                         if (Math.random() < 0.55 || w.pop > 60) demands.push("a title shot in the near future");
                         if (demands.length === 0) demands.push("a significant pay raise and more respect");
 
-                        let demandText = `${w.name} (Popularity: ${w.pop}, Happiness: ${w.happiness}) is unhappy.\n\n`;
-                        demandText += `Because of their status, they are being very demanding.\n`;
-                        demandText += `They want a $${demandedRaise} raise + ${demands.join(" + ")}.\n\n`;
-                        demandText += `Do you accept their demands?\n(Costs money and you may be expected to follow through on promises)`;
-
-                        const accept = confirm(demandText);
-
-                        if (accept && state.funds >= demandedRaise * 2) {
-                            w.salary += demandedRaise;
-                            w.happiness = Math.min(100, w.happiness + 25);
-                            state.funds -= demandedRaise * 2;
-
-                            // Track promises so the player feels the weight later
-                            if (!w.promises) w.promises = [];
-                            if (demands.some(d => d.includes("push"))) w.promises.push("better_push");
-                            if (demands.some(d => d.includes("title"))) w.promises.push("title_shot");
-                            if (demands.some(d => d.includes("creative"))) w.promises.push("promo_time");
-
-                            log(`${w.name} accepted the new contract. Happiness greatly improved.`);
-                        } else {
-                            const drop = (w.pop > 75) ? 22 : 15;
-                            w.happiness = Math.max(5, w.happiness - drop);
-
-                            log(`${w.name} was furious after the rejection.`);
-
-                            // Extremely low happiness = risk of walking out
-                            if (w.happiness < 18 && Math.random() < 0.65) {
-                                log(`<span style="color:#ff6666">${w.name} has had enough and LEFT THE COMPANY!</span>`);
-                                const idx = state.roster.indexOf(w);
-                                if (idx > -1) state.roster.splice(idx, 1);
-                            } else if (w.happiness < 30) {
-                                log(`${w.name} is now refusing to work until their demands are met.`);
-                            }
-                        }
+                        return {
+                            w: w,
+                            demandedRaise,
+                            demands
+                        };
                     });
+
+                    // Show the new in-page panel instead of confirm() spam
+                    showContractTalks(demandingDetails);
                 }
             }
 
@@ -941,7 +890,9 @@
             });
 
             activeCard = []; 
-            save(); updateUI();
+            window.activeCard = activeCard;
+            save(); 
+            updateUI();  // now includes renderRundown() at the end
         });
 
         function refreshMarket() {
@@ -980,26 +931,157 @@
             renderFullRoster(); // keep the new rich roster fresh
         }
 
-        function removeSegment(i) {
-            activeCard.splice(i, 1);
-            updateUI();
+        // === CARD EDITING HELPERS MOVED ===
+        // removeSegment, moveSegment, and clearCard now live in js/booking.js
+        // (first step of the modular split). They remain available globally because
+        // booking.js is loaded before this inline script.
+
+        // === CONTRACT TALKS SYSTEM (in-page replacement for old blocking confirm() dialogs) ===
+        let pendingContractTalks = [];
+
+        function showContractTalks(demandingDetails) {
+            if (!demandingDetails || demandingDetails.length === 0) return;
+
+            pendingContractTalks = demandingDetails;
+
+            const panel = document.getElementById('contract-talks-panel');
+            const list = document.getElementById('contract-talks-list');
+            if (!panel || !list) return;
+
+            list.innerHTML = '';
+
+            pendingContractTalks.forEach((talk, idx) => {
+                const card = document.createElement('div');
+                card.className = 'contract-demand-card';
+                card.id = `contract-card-${idx}`;
+
+                const demandsHtml = talk.demands.map(d => `• ${d}`).join('<br>');
+
+                card.innerHTML = `
+                    <div class="header">
+                        <span class="wrestler-name">${talk.w.name} (Pop ${talk.w.pop}, Hap ${talk.w.happiness})</span>
+                        <span class="raise">Demands +$${talk.demandedRaise}</span>
+                    </div>
+                    <div class="demands">${demandsHtml}</div>
+                    <div class="actions">
+                        <button class="btn-accept" onclick="resolveContractDemand(${idx}, true)">ACCEPT (costs $${talk.demandedRaise * 2})</button>
+                        <button class="btn-reject" onclick="resolveContractDemand(${idx}, false)">REJECT</button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+
+            panel.style.display = 'block';
+            log(`<b>— POST-PPV CONTRACT TALKS —</b> Resolve below.`);
         }
 
-        function moveSegment(i, dir) {
-            const j = i + dir;
-            if (j < 0 || j >= activeCard.length) return;
-            const temp = activeCard[i];
-            activeCard[i] = activeCard[j];
-            activeCard[j] = temp;
-            updateUI();
-        }
+        function resolveContractDemand(pendingIdx, accepted) {
+            const talk = pendingContractTalks[pendingIdx];
+            if (!talk || talk.resolved) return;
 
-        function clearCard() {
-            if (!activeCard.length) return;
-            if (confirm("Clear the entire show card?")) {
-                activeCard = [];
-                updateUI();
+            const w = talk.w;
+            const card = document.getElementById(`contract-card-${pendingIdx}`);
+            if (card) card.classList.add('resolved');
+
+            if (accepted && state.funds >= talk.demandedRaise * 2) {
+                w.salary += talk.demandedRaise;
+                w.happiness = Math.min(100, w.happiness + 25);
+                state.funds -= talk.demandedRaise * 2;
+
+                if (!w.promises) w.promises = [];
+                if (talk.demands.some(d => d.includes("push"))) w.promises.push("better_push");
+                if (talk.demands.some(d => d.includes("title"))) w.promises.push("title_shot");
+                if (talk.demands.some(d => d.includes("creative"))) w.promises.push("promo_time");
+
+                log(`${w.name} accepted the new contract. Happiness greatly improved.`);
+            } else {
+                const drop = (w.pop > 75) ? 22 : 15;
+                w.happiness = Math.max(5, w.happiness - drop);
+
+                log(`${w.name} was furious after the rejection.`);
+
+                if (w.happiness < 18 && Math.random() < 0.65) {
+                    log(`<span style="color:#ff6666">${w.name} has had enough and LEFT THE COMPANY!</span>`);
+                    const idx = state.roster.indexOf(w);
+                    if (idx > -1) state.roster.splice(idx, 1);
+                } else if (w.happiness < 30) {
+                    log(`${w.name} is now refusing to work until their demands are met.`);
+                }
             }
+
+            talk.resolved = true;
+
+            // Check if all talks are done
+            const remaining = pendingContractTalks.filter(t => !t.resolved);
+            if (remaining.length === 0) {
+                const panel = document.getElementById('contract-talks-panel');
+                if (panel) {
+                    setTimeout(() => {
+                        panel.style.display = 'none';
+                        document.getElementById('contract-talks-list').innerHTML = '';
+                        // Force a full refresh of the CURRENT SHOW CARD after contracts are done
+                        activeCard = [];
+                        window.activeCard = activeCard;
+                        if (typeof renderRundown === 'function') renderRundown();
+                    }, 1200);
+                }
+                pendingContractTalks = [];
+            }
+
+            save(); updateUI();
+            // Ensure the CURRENT SHOW CARD and booking buttons are refreshed
+            // after contract resolutions (updateUI alone doesn't call renderRundown post-split)
+            if (typeof renderRundown === 'function') renderRundown();
+        }
+
+        // === LIVE EVENTS PREVIEW (first step toward player agency / "mitigate with good choices") ===
+        function previewLiveRisks() {
+            if (!activeCard || activeCard.length === 0) {
+                alert("Build your 6-segment card first, then check risks.");
+                return;
+            }
+
+            const venue = currentVenue;
+            if (!venue) {
+                log("No venue selected — risks unknown.");
+                return;
+            }
+
+            log(`<b>— LIVE EVENT RISK PREVIEW (${venue.name}) —</b>`);
+
+            const riskPct = Math.round((venue.weatherRisk || 0) * 100);
+            log(`Weather risk: ${riskPct}%`);
+
+            // Vulnerable matches in current card
+            const vulnerable = activeCard.filter(m => ['ladder', 'cage'].includes(m.type));
+            if (vulnerable.length > 0 && Math.random() < (venue.weatherRisk || 0)) {
+                log(`<span style="color:#ffaa66">Possible weather impact on high-risk matches (ladder/cage).</span>`);
+            } else if (vulnerable.length > 0) {
+                log(`High-risk matches present, but weather looks stable for now.`);
+            }
+
+            // Backstage tension (unhappy or low stamina wrestlers on the card)
+            const bookedIndices = new Set();
+            activeCard.forEach(m => {
+                bookedIndices.add(m.a);
+                bookedIndices.add(m.b);
+                if (m.isTag) { bookedIndices.add(m.a2); bookedIndices.add(m.b2); }
+            });
+
+            const tenseBooked = Array.from(bookedIndices)
+                .map(i => state.roster[i])
+                .filter(w => w && (w.happiness < 50 || w.stamina < 55));
+
+            if (tenseBooked.length > 0) {
+                log(`<span style="color:#ffaa66">Backstage tension: ${tenseBooked.length} booked wrestler(s) are vulnerable to attacks.</span>`);
+            }
+
+            // Forced spot chance
+            if (Math.random() < 0.18) {
+                log(`<span style="color:#ffcc66">Possible unplanned moment (run-in or ref bump) on a random segment.</span>`);
+            }
+
+            log(`Preview is directional only. Actual events are still rolled at broadcast time.`);
         }
 
         // === LIVE EVENTS RESOLVER (plan-approved RNG weather + dynamic drama) ===
@@ -1036,13 +1118,23 @@
                 }
             }
 
-            // 2. Backstage attack / ambush (random roster member)
+            // 2. Backstage attack / ambush (prefers booked or unhappy wrestlers - player can mitigate)
             if (Math.random() < 0.22) {
-                const targetIdx = Math.floor(Math.random() * state.roster.length);
+                // Prefer wrestlers who are on the current card or have low happiness/stamina
+                let candidates = state.roster
+                    .map((w, i) => ({ w, i }))
+                    .filter(item => item.w && (activeCard.some(m =>
+                        m.a === item.i || m.b === item.i ||
+                        (m.isTag && (m.a2 === item.i || m.b2 === item.i))
+                    ) || item.w.happiness < 50 || item.w.stamina < 55));
+
+                if (candidates.length === 0) candidates = state.roster.map((w, i) => ({ w, i })).filter(x => x.w);
+
+                const pick = candidates[Math.floor(Math.random() * candidates.length)];
                 events.push({
                     type: 'backstage_attack',
-                    wrestlerIdx: targetIdx,
-                    name: state.roster[targetIdx].name,
+                    wrestlerIdx: pick.i,
+                    name: pick.w.name,
                     staminaHit: 25 + Math.floor(Math.random() * 15)
                 });
             }
@@ -1192,11 +1284,18 @@
 
             localStorage.clear();
 
-            // Pre-seed the new promotion details before reload
+            // Pre-seed the new promotion details
             localStorage.setItem('pg2_promotion_name', name);
             localStorage.setItem('pg2_promotion_location', location);
 
-            location.reload();
+            // Drop the player straight into the game instead of just reloading
+            // (avoids the confusing "click start new game then still see main menu" experience)
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('game-content').style.display = 'block';
+
+            // Re-initialize so the new promotion name is picked up everywhere
+            initState();
+            updatePromotionHeader();
         }
 
         function newGame() {
@@ -1595,6 +1694,55 @@
             save();
             updateUI();
             renderFullRoster();
+        }
+
+        // === CREATE NEW WRESTLER (text + dropdown based) ===
+        function createNewWrestler() {
+            const name = (document.getElementById('create-name').value || '').trim();
+            const alignment = document.getElementById('create-alignment').value;
+            const archetype = document.getElementById('create-archetype').value;
+            const icon = (document.getElementById('create-icon').value || '★').trim();
+            const pop = parseInt(document.getElementById('create-pop').value) || 20;
+            const stamina = parseInt(document.getElementById('create-stamina').value) || 90;
+            const happiness = parseInt(document.getElementById('create-happiness').value) || 70;
+            const salary = parseInt(document.getElementById('create-salary').value) || 110;
+
+            if (!name) {
+                alert("Wrestler needs a name.");
+                return;
+            }
+
+            // Data-driven validation
+            if (!ALIGNMENTS.includes(alignment)) {
+                alert("Invalid alignment selected.");
+                return;
+            }
+            if (!ARCHETYPES.includes(archetype)) {
+                alert("Invalid archetype selected.");
+                return;
+            }
+
+            const newWrestler = {
+                name: name,
+                pop: Math.max(5, Math.min(80, pop)),
+                salary: Math.max(50, salary),
+                stamina: Math.max(50, Math.min(100, stamina)),
+                alignment: alignment,
+                archetype: archetype,
+                legendIcon: icon || "★",
+                activeWorkouts: [],
+                happiness: Math.max(30, Math.min(100, happiness)),
+                promises: []
+            };
+
+            state.roster.push(newWrestler);
+            save();
+            updateUI();
+            renderFullRoster();
+
+            // Clear name field for quick successive creates
+            document.getElementById('create-name').value = '';
+            log(`[ROSTER] Created new wrestler: ${name}`);
         }
 
         // === CREATIVE HQ FUNCTIONS ===
