@@ -17,3 +17,6 @@ Thumbs.db
 node_modules/
 dist/
 build/
+
+# Local config with secrets (do not commit real keys)
+config.js
