@@ -1,0 +1,581 @@
+/* ========================================
+   P&G GLOBAL - SHOWRUNNER TERMINAL
+   Modern Cyberpunk Management Sim Styles
+   ======================================== */
+
+:root {
+    --main-purple: #6a0dad;
+    --main-green: #39ff14;
+    --dark-bg: #0d0d0d;
+    --card: #161616;
+    --danger: #ff4444;
+}
+
+/* Base */
+body {
+    background: var(--dark-bg);
+    color: #ddd;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 20px;
+    margin-bottom: 50px;
+    line-height: 1.5;
+}
+
+/* Keep monospace only for true terminal elements */
+.log-box,
+.ticker,
+.rundown-list,
+code,
+pre {
+    font-family: 'Courier New', 'Consolas', monospace;
+}
+
+h1, h2, h3 {
+    color: var(--main-green);
+    border-bottom: 1px solid #2a2a2a;
+    margin-bottom: 15px;
+    letter-spacing: 1px;
+}
+
+/* Cards */
+.card {
+    background: var(--card);
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.card:hover {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.roster-entry {
+    display: flex;
+    justify-content: space-between;
+    background: #111;
+    padding: 8px;
+    border-left: 4px solid var(--main-green);
+    margin-bottom: 5px;
+    font-size: 0.85em;
+}
+
+.market-entry {
+    border: 1px solid #2a2a2a;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: #111;
+    border-radius: 4px;
+}
+
+.market-entry:hover {
+    border-color: #39ff14;
+}
+
+/* Booking Layout */
+.booking-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.spot-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    font-size: 0.75em;
+    color: var(--main-green);
+}
+
+/* Form Elements */
+select, button {
+    background: #1a1a1a;
+    color: #ddd;
+    border: 1px solid #3a3a3a;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-family: inherit;
+    width: 100%;
+    font-weight: 600;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+}
+
+select {
+    background: #111;
+    color: #39ff14;
+}
+
+button:hover {
+    background: #252525;
+    border-color: var(--main-green);
+    color: #fff;
+}
+
+button:active {
+    transform: translateY(1px);
+}
+
+button:disabled {
+    border-color: #333;
+    color: #666;
+    cursor: not-allowed;
+    background: #111;
+    opacity: 0.6;
+}
+
+/* Specific Elements */
+.money-text {
+    font-size: 1.8em;
+    color: var(--main-green);
+}
+
+.hype-bar {
+    background: #222;
+    border: 1px solid var(--main-purple);
+    height: 20px;
+    width: 100%;
+    margin: 5px 0 15px 0;
+}
+
+.hype-fill {
+    background: var(--main-green);
+    height: 100%;
+    transition: width 0.5s;
+    box-shadow: 0 0 10px var(--main-green);
+}
+
+.rival-fill {
+    background: var(--danger);
+    height: 100%;
+    transition: width 0.5s;
+    box-shadow: 0 0 10px var(--danger);
+}
+
+.log-box {
+    background: #000;
+    border: 1px solid #333;
+    height: 200px;
+    overflow-y: auto;
+    padding: 10px;
+    font-size: 0.8em;
+    color: #888;
+}
+
+.stars {
+    color: #ffd700;
+    font-weight: bold;
+}
+
+.champ-tag {
+    color: #ffd700;
+    font-size: 0.8em;
+    margin-left: 5px;
+    text-shadow: 0 0 5px #ffd700;
+}
+
+.tag-champ-tag {
+    color: #00e5ff;
+    font-size: 0.8em;
+    margin-left: 5px;
+    text-shadow: 0 0 5px #00e5ff;
+}
+
+.rundown-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 10px 0;
+    font-size: 0.85em;
+}
+
+.rundown-list li {
+    background: #222;
+    padding: 6px 8px;
+    margin-bottom: 5px;
+    border-left: 3px solid var(--main-purple);
+}
+
+.rundown-list button {
+    background: #111;
+    color: var(--main-green);
+    border: 1px solid #444;
+    cursor: pointer;
+    font-family: inherit;
+    min-width: 22px;
+}
+
+.ticker-wrap {
+    width: 100%;
+    overflow: hidden;
+    background-color: var(--main-purple);
+    border-top: 2px solid var(--main-green);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    padding: 5px 0;
+    z-index: 100;
+}
+
+.ticker {
+    display: inline-block;
+    white-space: nowrap;
+    padding-right: 100%;
+    animation: ticker 30s linear infinite;
+    color: var(--main-green);
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+@keyframes ticker {
+    0% { transform: translate3d(0, 0, 0); }
+    100% { transform: translate3d(-100%, 0, 0); }
+}
+
+.ticker-item {
+    display: inline-block;
+    padding: 0 50px;
+}
+
+/* Tab System */
+.tab-bar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #2a2a2a;
+    padding-bottom: 6px;
+}
+
+.tab-btn {
+    background: transparent;
+    color: #888;
+    border: none;
+    padding: 10px 18px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all 0.15s ease;
+    border-radius: 4px 4px 0 0;
+}
+
+.tab-btn:hover {
+    color: #ccc;
+    background: #1a1a1a;
+}
+
+.tab-btn.active {
+    color: var(--main-green);
+    background: #1a1a1a;
+    border-bottom: 3px solid var(--main-green);
+}
+
+.tab-panel {
+    display: none;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+/* Roster Table */
+.roster-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82em;
+    table-layout: auto;
+    min-width: 720px;
+}
+
+.roster-table th {
+    text-align: left;
+    color: #888;
+    padding: 8px 6px;
+    border-bottom: 2px solid #444;
+    background: #1a1a1a;
+    font-weight: normal;
+    white-space: nowrap;
+}
+
+.roster-table td {
+    padding: 7px 6px;
+    border-bottom: 1px solid #222;
+    vertical-align: middle;
+}
+
+.roster-table tr:hover td {
+    background: #1f1f1f;
+}
+
+.roster-table tr:nth-child(even) td {
+    background: #181818;
+}
+
+.roster-table tr:nth-child(even):hover td {
+    background: #1f1f1f;
+}
+
+.alignment-heel { color: #ff6666; font-weight: bold; }
+.alignment-face { color: #66ff99; font-weight: bold; }
+
+.roster-table select {
+    background: #111;
+    color: #39ff14;
+    border: 1px solid #333;
+    font-family: inherit;
+    font-size: 0.9em;
+}
+
+.roster-table button {
+    background: #111;
+    color: #39ff14;
+    border: 1px solid #444;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.1s;
+}
+
+.roster-table button:hover {
+    background: #222;
+    border-color: #39ff14;
+}
+
+/* Accessibility */
+body.text-small { font-size: 14px; }
+body.text-normal { font-size: 16px; }
+body.text-large { font-size: 19px; }
+body.text-xlarge { font-size: 22px; }
+
+body.high-contrast {
+    --main-green: #66ff99;
+    --main-purple: #aa66ff;
+    color: #fff;
+    background: #000;
+}
+
+body.reduce-motion * {
+    animation: none !important;
+    transition: none !important;
+}
+
+body.simplify-ui .card {
+    box-shadow: none;
+    border: 1px solid #444;
+}
+
+/* Beta banner in main menu */
+.beta-banner {
+    margin-bottom: 20px;
+    padding: 8px 14px;
+    background: #1a1200;
+    border: 1px solid #ffaa00;
+    border-radius: 4px;
+    font-size: 0.8em;
+    color: #ffcc66;
+    line-height: 1.35;
+}
+
+/* Roster Page Layout */
+.roster-page {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+@media (min-width: 1100px) {
+    .roster-page {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.roster-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.free-agency-section {
+    border-color: #2a2a2a;
+}
+
+/* Accessibility-friendly roster enhancements (respects text-size, high-contrast, etc.) */
+body.text-large .roster-table,
+body.text-xlarge .roster-table {
+    font-size: 0.95em;
+}
+
+body.high-contrast .roster-table th {
+    background: #111;
+    color: #fff;
+}
+
+body.high-contrast .roster-table tr:hover td {
+    background: #222;
+}
+
+/* Modern Card Polish */
+.card {
+    background: #161616;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.card:hover {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.card h3 {
+    font-size: 0.95em;
+    letter-spacing: 1.5px;
+    margin-bottom: 14px;
+    color: #39ff14;
+    border-bottom: 1px solid #2a2a2a;
+    padding-bottom: 8px;
+}
+
+button {
+    border-radius: 4px;
+    transition: all 0.15s ease;
+}
+
+button:hover {
+    transform: translateY(-1px);
+}
+
+/* ========================================
+   PROMINENT CURRENT SHOW CARD
+   Makes it dead obvious what matches you are booking
+   ======================================== */
+.current-show-card {
+    background: #0f0f0f;
+    border: 3px solid var(--main-green);
+    box-shadow: 0 0 0 1px rgba(57, 255, 20, 0.2),
+                0 10px 40px rgba(0, 0, 0, 0.6);
+    margin-top: 16px;
+}
+
+.current-show-card:hover {
+    box-shadow: 0 0 0 1px rgba(57, 255, 20, 0.3),
+                0 14px 50px rgba(0, 0, 0, 0.7);
+}
+
+.show-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    gap: 12px;
+}
+
+.show-card-header h4 {
+    margin: 0;
+    color: var(--main-green);
+    font-size: 1.1em;
+    letter-spacing: 1px;
+}
+
+.show-card-subtitle {
+    font-size: 0.78em;
+    color: #777;
+    margin-top: 3px;
+}
+
+.show-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.segment-count {
+    font-size: 1.05em;
+    color: #888;
+}
+
+.segment-count .max {
+    color: #555;
+}
+
+.small-btn {
+    padding: 4px 10px;
+    font-size: 0.68em;
+    width: auto;
+}
+
+/* Rundown items — highly scannable booked matches */
+.rundown-list {
+    min-height: 170px;
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    padding: 10px;
+    border-radius: 6px;
+}
+
+.rundown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 10px;
+    background: #111;
+    margin-bottom: 5px;
+    border-radius: 4px;
+    border-left: 4px solid #39ff14;
+}
+
+.rundown-item .seg-label {
+    font-weight: 700;
+    color: #39ff14;
+    font-size: 0.78em;
+    min-width: 52px;
+}
+
+.rundown-item .match-text {
+    flex: 1;
+    font-size: 0.9em;
+}
+
+.rundown-item .match-type {
+    color: #39ff14;
+    font-size: 0.78em;
+    font-weight: 600;
+    background: rgba(57,255,20,0.08);
+    padding: 1px 6px;
+    border-radius: 3px;
+}
+
+.rundown-item .extras {
+    color: #ffaa66;
+    font-size: 0.72em;
+}
+
+.rundown-item .controls button {
+    padding: 2px 7px;
+    font-size: 0.65em;
+    width: auto;
+    min-width: 24px;
+}
+
+.broadcast-btn {
+    font-size: 1.1em;
+    margin-top: 12px;
+    background: #0a2a0a;
+    border-color: #39ff14;
+    font-weight: 600;
+    padding: 12px;
+}
+
+/* Tag for extra spots on segments */
+.extras-tag {
+    display: inline-block;
+    background: #222;
+    color: #ffaa66;
+    font-size: 0.65em;
+    padding: 0 5px;
+    border-radius: 2px;
+    margin-left: 4px;
+}

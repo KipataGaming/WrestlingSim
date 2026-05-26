@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SHADOW NETWORK KEY RETRIEVER</title>
+    <style>
+        body { 
+            background: #050505; color: #39ff14; 
+            font-family: 'Consolas', monospace; padding: 40px; 
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .box {
+            background: #101012; border: 2px solid #6a0dad;
+            padding: 20px; width: 100%; max-width: 600px;
+            box-shadow: 0 0 20px rgba(106, 13, 173, 0.4);
+        }
+        h2 { color: #00ffcc; text-transform: uppercase; letter-spacing: 2px; }
+        textarea {
+            width: 100%; height: 250px; background: #000; color: #ffd700;
+            border: 1px solid #333; padding: 10px; font-family: inherit;
+            margin-bottom: 20px; resize: none;
+        }
+        button {
+            background: #6a0dad; color: #fff; border: none;
+            padding: 15px 30px; cursor: pointer; font-weight: bold;
+            text-transform: uppercase; width: 100%;
+        }
+        button:hover { background: #39ff14; color: #000; }
+        .hint { font-size: 0.8em; color: #888; margin-top: 15px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h2>Connection Key Found</h2>
+        <p>Copy the code below and paste it into your Netlify site's <strong>System Settings -> Update Connection Key</strong>.</p>
+        
+        <textarea id="config-output" readonly>INITIALIZING RETRIEVAL...</textarea>
+        
+        <button onclick="copyKey()">Copy to Clipboard</button>
+        
+        <div class="hint">
+            This key tells your Netlify site how to talk to the Shadow Network (Firestore).
+        </div>
+    </div>
+
+    <script>
+        window.onload = () => {
+            try {
+                // Safely grab the config from the environment
+                const config = typeof __firebase_config !== 'undefined' ? __firebase_config : '{"error": "Environment config not found. Please run this inside the Canvas chat."}';
+                const output = document.getElementById('config-output');
+                
+                // Format it nicely for the user
+                const parsed = JSON.parse(config);
+                output.value = JSON.stringify(parsed, null, 2);
+            } catch (e) {
+                document.getElementById('config-output').value = "ERROR: Could not parse configuration.";
+            }
+        };
+
+        function copyKey() {
+            const copyText = document.getElementById("config-output");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            document.execCommand("copy");
+            alert("Connection Key copied to clipboard!");
+        }
+    </script>
+</body>
+</html>
