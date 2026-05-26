@@ -1,7 +1,7 @@
 // ============================================
 // P&G GLOBAL - SHOWRUNNER TERMINAL
 // booking.js — Show booking, simulation, and game systems
-// Responsibilities (planned / in progress):
+// Responsibilities:
 //   - addSegment(), removeSegment(), moveSegment(), clearCard()
 //   - executeShow() / broadcast logic (live events, simulation, post-broadcast)
 //   - resolveLiveEvents() (weather, attacks, ref bumps, etc.)
@@ -51,7 +51,7 @@ function clearCard() {
     }
 }
 
-// === LIVE EVENTS SYSTEM (moved from inline script) ===
+// === LIVE EVENTS SYSTEM ===
 // Contains preview + resolver for weather, backstage attacks, and forced spots.
 
 function previewLiveRisks() {
@@ -491,7 +491,7 @@ function processPostBroadcast(data) {
 }
 
 // ============================================
-// CONTRACT TALKS SYSTEM (moved from inline script)
+// CONTRACT TALKS SYSTEM
 // In-page replacement for old blocking confirm() dialogs after PPV.
 // Called from processPostBroadcast when isPPV is true.
 // The static HTML panel lives in index.html (Booking tab).
@@ -699,7 +699,7 @@ function executeShow() {
     updateUI();  // includes renderRundown()
 }
 
-// === FREE AGENCY / MARKET (moved from inline script) ===
+// === FREE AGENCY / MARKET ===
 // refreshMarket and hire are game state operations (spending funds, generating talent,
 // adding to roster). They belong with other booking/operations logic.
 

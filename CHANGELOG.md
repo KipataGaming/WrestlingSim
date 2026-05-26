@@ -157,6 +157,79 @@ Documented per the standing rule. Headless progress on the split continues.
 - `index.html`: two blocks inside `updateUI()` replaced with thin calls (another ~25-30 lines removed from the inline script).
 - `CHANGELOG.md`: this entry.
 
+---
+
+### [Split Continuation] Tab system + remaining booking helper moved to ui.js
+**Date**: User: "continue with the split" (specifically: move tab system + remaining small booking helpers, start thinning bottom init block).
+
+**What was done**
+- Moved `populateTitleStakes()` (small booking helper) to `js/ui.js`.
+- Moved the full `initTabs()` function (the entire tab switching system) to `js/ui.js`.
+  - As a bonus, replaced the duplicated dropdown logic inside the "booking" tab case with a call to the already-extracted `populateBookingDropdowns()`.
+- Removed the original large blocks from `index.html` (left short "moved" comments).
+- Updated the responsibilities list in the `js/ui.js` header.
+- Added this CHANGELOG entry.
+
+**Why**
+- These were the next clear pieces of UI logic still living in the monolith.
+- Moving `initTabs` is a big step toward pulling the bottom initialization/wiring out of index.html.
+- Removing the duplication inside the tab handler is a nice quality win.
+
+**Files changed**
+- `js/ui.js`: `populateTitleStakes` + improved `initTabs` added + header updated.
+- `index.html`: Large `initTabs` and `populateTitleStakes` removed.
+- `CHANGELOG.md`: This entry.
+
+**Impact**
+- The tab system is now fully in `ui.js`.
+- Another significant reduction in the size of the inline script.
+- Better code reuse (no more fake dropdown update logic).
+
+Documented per the standing rule.
+
+---
+
+### [Split Complete] Monolith fully extracted — index.html is now pure HTML + tiny bootstrap
+**Date**: User: "finish the spilit completely" + "tell me when its completely seperate"
+
+**What was done**
+- Moved the last remaining small inline pieces (`updateTicker` + headlines, medical interval wiring, upgrade button, market refresh guard) into `js/ui.js` (mostly inside the extended `initializeGame()`).
+- Removed all remaining inline logic and the dozens of noisy "MOVED" comments from the bottom of `index.html`.
+- Left `index.html` with only the four module `<script src>` tags + a single clean `initializeGame();` call.
+- Updated the `js/ui.js` header to its final clean form.
+- Added this final CHANGELOG entry.
+
+**Why**
+- The user explicitly asked to finish the split until the codebase was "completely separate."
+- This is the natural and intended end state: the view layer (HTML) is completely decoupled from all behavior.
+
+**Files changed**
+- `js/ui.js`: Final small pieces + cleaned header.
+- `index.html`: Dramatic final reduction. The inline script is now minimal.
+- `CHANGELOG.md`: This entry.
+
+**Impact**
+- `index.html` is now essentially a pure view file.
+- All application logic lives in the four well-organized modules.
+- The original ~2380-line monolith has been fully transformed.
+
+**The split is now completely separate.**
+
+---
+
+### Final Architecture
+- **index.html** — Pure HTML + 4 script tags + `initializeGame();`
+- **js/data.js** — All static data
+- **js/state.js** — State, persistence, migration
+- **js/ui.js** — Rendering + Creative HQ + initialization + accessibility
+- **js/booking.js** — Complete game systems (broadcast, contracts, market, live events, etc.)
+
+This fulfills the original goal: "make this not a 1500 line mess."
+
+---
+
+### Changes in this phase (continued)
+
 **Impact**
 - `updateUI()` is incrementally smaller and easier to read.
 - Another step toward the declared goal of `js/ui.js` owning all rendering concerns.
@@ -227,6 +300,37 @@ The original ~2380-line single file has been transformed into a clean, maintaina
 **Impact**
 - `updateUI()` continues to shrink and become more of an orchestrator.
 - Another clear win for the "not a 1500 line mess" goal.
+
+---
+
+### [Split Continuation] Booking form helpers moved to ui.js
+**Date**: User request: "move toggleTagUI() + populateMatchTypes() into js/ui.js from now on we build and split together"
+
+**What was done**
+- Moved `toggleTagUI()` and `populateMatchTypes()` from the inline script into `js/ui.js`.
+- Removed the original definitions from `index.html` (left short "moved" comments).
+- Updated the responsibilities list in the `js/ui.js` header.
+- Added this CHANGELOG entry.
+
+**Why**
+- These are pure UI/form helpers for the Booking tab.
+- Moving them continues the modular split and keeps all booking-related UI logic in one place (`ui.js`).
+- The `onchange="toggleTagUI()"` attribute in the HTML continues to work because the function is global.
+
+**Files changed**
+- `js/ui.js`: Two new helper functions + updated header comment.
+- `index.html`: Original function definitions removed.
+- `CHANGELOG.md`: This entry.
+
+**Impact**
+- Further reduction of logic in the monolith.
+- Booking form initialization and dynamic UI (showing/hiding tag selectors) is now fully in `js/ui.js`.
+
+Documented per the standing rule.
+
+---
+
+### Changes in this phase (continued)
 
 ---
 

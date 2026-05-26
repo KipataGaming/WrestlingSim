@@ -7,19 +7,12 @@
 //   - Creative tab (titles, stipulations, promo generator)
 //   - Roster editing and wrestler creation
 //   - Venue/tour UI
-//   - Tab system and various population helpers
+//   - Tab system (initTabs)
 //   - Game initialization (initializeGame)
 //   - Accessibility helpers
 // ============================================
 
-// Placeholder – functions will be moved here incrementally from the old inline script
-// to continue shrinking the monolith in index.html.
-
-console.log('%c[ui.js] loaded (render functions moved here)', 'color:#39ff14');
-
-// === CURRENT SHOW CARD RENDERING (moved from index.html as part of the split) ===
-// This owns the visual state of the prominent 6-segment rundown and the
-// enabled/disabled state of the Add/Broadcast buttons.
+console.log('%c[ui.js] loaded', 'color:#39ff14');
 
 function renderRundown() {
     // Note: this function expects the booking form elements and #card-rundown to exist
@@ -205,10 +198,9 @@ function populateBookingDropdowns() {
     if (selB2 && sB2 !== "") selB2.value = sB2;
 }
 
-// === RICH ROSTER VIEW + EDITING (moved from inline script) ===
-// This entire block (display + rename/icon/workout/medical editing) is now in the UI module.
-// The generated HTML still uses onclick="renameWrestler(...)" etc., which continue to work
-// because the functions remain global.
+// === RICH ROSTER VIEW + EDITING ===
+// Display + rename / icon / workout / medical editing for the roster table.
+// The generated HTML still uses onclick handlers that resolve to these global functions.
 
 function getWrestlerDisplayName(i) {
     const w = state.roster[i];
@@ -508,8 +500,7 @@ function payForRecovery() {
 }
 
 // === CREATIVE HQ (titles & stipulations management) ===
-// Moved from inline script. These manage custom titles and stipulations
-// and keep the Creative tab in sync.
+// Manages custom titles and stipulations and keeps the Creative tab in sync.
 
 function populateTitleStakes() {
     const sel = document.getElementById('match-stakes');
@@ -647,7 +638,7 @@ function deleteCustomTitle(index) {
     }
 }
 
-// === PROMO GENERATOR TOOLS (moved from inline script) ===
+// === PROMO GENERATOR TOOLS ===
 // The "Procedural Promo Generator that actually matters" + supporting functions.
 
 function generatePromo() {
@@ -716,8 +707,8 @@ function populatePromoWrestlers() {
 }
 
 // === VENUE / TOUR STOP INITIALIZATION (live events foundation) ===
-// Moved from inline script. These set up the venue selector and weather risk display
-// in the Operations tab. currentVenue remains global as it is read by booking.js live events.
+// Sets up the venue selector and weather risk display in the Operations tab.
+// currentVenue is global because it is read by the live events system in booking.js.
 
 function initVenues() {
     const sel = document.getElementById('venue-select');
@@ -811,32 +802,9 @@ function renderLastShowRecap() {
     `;
 }
 
-// === GAME INITIALIZATION (final extraction) ===
-// All the one-time setup that used to live at the bottom of the inline script.
-// This keeps index.html extremely clean (mostly HTML + one bootstrap call).
+// (old duplicate initializeGame removed — extended version lives at the bottom of the file)
 
-function initializeGame() {
-    initVenues();
-    initTabs();
-    populateMatchTypes();
-    populateTitleStakes();
-    updateUI();
-    renderFullRoster();
-
-    // Initialize accessibility + main menu behavior
-    initAccessibility();
-
-    // Dynamically set promotion name in the main menu title (for returning players)
-    const menuTitle = document.getElementById('main-menu-title');
-    if (menuTitle && state.promotionName) {
-        menuTitle.textContent = state.promotionName.toUpperCase();
-    }
-
-    // On first load, show main menu instead of jumping straight in
-    // (We already have the menu visible by default via inline style)
-}
-
-// === CREATE NEW WRESTLER (moved from inline script) ===
+// === CREATE NEW WRESTLER ===
 // Form handler for the "Create New Wrestler" section in the Roster tab.
 
 function createNewWrestler() {
@@ -885,4 +853,351 @@ function createNewWrestler() {
     // Clear name field for quick successive creates
     document.getElementById('create-name').value = '';
     log(`[ROSTER] Created new wrestler: ${name}`);
+}
+
+// === BOOKING FORM HELPERS ===
+
+function toggleTagUI() {
+    const type = document.getElementById('match-type').value;
+    const selects = document.querySelectorAll('.tag-select');
+    const stakes = document.getElementById('match-stakes');
+
+    const isMulti = ['tag', 'trios'].includes(type);
+
+    selects.forEach(s => s.style.display = isMulti ? 'block' : 'none');
+
+    // If switching away from a multi-person match, reset stakes if it was a multi title
+    if (!isMulti && stakes) {
+        const currentStake = stakes.value;
+        if (currentStake === 'tag' || currentStake === 'trios' || currentStake === 'womensTag') {
+            stakes.value = 'exhibition';
+        }
+    }
+}
+
+// === TAB SYSTEM ===
+function initTabs() {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const target = btn.getAttribute('data-tab');
+
+            // deactivate all
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+
+            // activate target
+            btn.classList.add('active');
+            document.getElementById('tab-' + target).classList.add('active');
+
+            // refresh content that needs it
+            if (target === 'roster') renderFullRoster();
+            if (target === 'booking') {
+                // ensure booking dropdowns reflect any renames/edits
+                if (typeof populateBookingDropdowns === 'function') {
+                    populateBookingDropdowns();
+                }
+            }
+            if (target === 'creative') {
+                renderCreativeTitles();
+                renderStipulationsList();
+                populatePromoWrestlers();
+            }
+            // Note: Game Log is now permanently in the Booking tab for better flow
+        });
+    });
+}
+
+// === ACCESSIBILITY FUNCTIONS ===
+// These handle text sizing, high contrast, reduce motion, and the modals.
+
+function applyAccessibilitySettings() {
+    const body = document.body;
+    const settings = JSON.parse(localStorage.getItem('pg2_accessibility') || '{}');
+
+    body.classList.remove('text-small', 'text-normal', 'text-large', 'text-xlarge');
+    if (settings.textSize) {
+        body.classList.add(`text-${settings.textSize}`);
+    } else {
+        body.classList.add('text-normal');
+    }
+
+    body.classList.toggle('high-contrast', !!settings.highContrast);
+    body.classList.toggle('reduce-motion', !!settings.reduceMotion);
+    body.classList.toggle('simplify-ui', !!settings.simplifyUI);
+}
+
+function setTextSize(size) {
+    const settings = JSON.parse(localStorage.getItem('pg2_accessibility') || '{}');
+    settings.textSize = size;
+    localStorage.setItem('pg2_accessibility', JSON.stringify(settings));
+    applyAccessibilitySettings();
+}
+
+function toggleHighContrast() {
+    const settings = JSON.parse(localStorage.getItem('pg2_accessibility') || '{}');
+    settings.highContrast = document.getElementById('high-contrast').checked;
+    localStorage.setItem('pg2_accessibility', JSON.stringify(settings));
+    applyAccessibilitySettings();
+}
+
+function toggleReduceMotion() {
+    const settings = JSON.parse(localStorage.getItem('pg2_accessibility') || '{}');
+    settings.reduceMotion = document.getElementById('reduce-motion').checked;
+    localStorage.setItem('pg2_accessibility', JSON.stringify(settings));
+    applyAccessibilitySettings();
+}
+
+function toggleSimplifyUI() {
+    const settings = JSON.parse(localStorage.getItem('pg2_accessibility') || '{}');
+    settings.simplifyUI = document.getElementById('simplify-ui').checked;
+    localStorage.setItem('pg2_accessibility', JSON.stringify(settings));
+    applyAccessibilitySettings();
+}
+
+function showAccessibilityMenu() {
+    const modal = document.getElementById('accessibility-modal');
+    const settings = JSON.parse(localStorage.getItem('pg2_accessibility') || '{}');
+
+    document.getElementById('high-contrast').checked = !!settings.highContrast;
+    document.getElementById('reduce-motion').checked = !!settings.reduceMotion;
+    document.getElementById('simplify-ui').checked = !!settings.simplifyUI;
+
+    modal.style.display = 'flex';
+}
+
+function hideAccessibilityMenu() {
+    document.getElementById('accessibility-modal').style.display = 'none';
+}
+
+function showHowToPlay() {
+    document.getElementById('how-to-play-modal').style.display = 'flex';
+}
+
+function hideHowToPlay() {
+    document.getElementById('how-to-play-modal').style.display = 'none';
+}
+
+// === MAIN MENU & NEW GAME FUNCTIONS ===
+
+function continueGame() {
+    document.getElementById('main-menu').style.display = 'none';
+    document.getElementById('game-content').style.display = 'block';
+    updatePromotionHeader();
+}
+
+function showNewGameSetup() {
+    const menu = document.getElementById('main-menu');
+    
+    menu.innerHTML = `
+        <div style="text-align: center; max-width: 520px; padding: 20px;">
+            <h2 style="color: #39ff14; margin-bottom: 20px;">CREATE YOUR PROMOTION</h2>
+            
+            <div style="text-align: left; margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 6px; color: #888;">Promotion Name</label>
+                <input id="new-promo-name" type="text" value="P&G Global" 
+                       style="width: 100%; padding: 10px; background: #111; border: 1px solid #39ff14; color: #fff; font-size: 1.05em;">
+                
+                <label style="display: block; margin: 16px 0 6px; color: #888;">Home Location / City</label>
+                <input id="new-promo-location" type="text" value="Chicago, Illinois" 
+                       style="width: 100%; padding: 10px; background: #111; border: 1px solid #39ff14; color: #fff; font-size: 1.05em;">
+            </div>
+
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button onclick="startNewGameWithDetails()" 
+                        style="padding: 12px 24px; background: #111; border: 2px solid #39ff14; color: #39ff14; cursor: pointer;">
+                    START NEW GAME
+                </button>
+                <button onclick="location.reload()" 
+                        style="padding: 12px 24px; background: #111; border: 1px solid #666; color: #888; cursor: pointer;">
+                    CANCEL
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function startNewGameWithDetails() {
+    const name = document.getElementById('new-promo-name').value.trim() || "P&G Global";
+    const location = document.getElementById('new-promo-location').value.trim() || "Chicago, Illinois";
+
+    localStorage.clear();
+
+    // Pre-seed the new promotion details
+    localStorage.setItem('pg2_promotion_name', name);
+    localStorage.setItem('pg2_promotion_location', location);
+
+    // Drop the player straight into the game instead of just reloading
+    // (avoids the confusing "click start new game then still see main menu" experience)
+    document.getElementById('main-menu').style.display = 'none';
+    document.getElementById('game-content').style.display = 'block';
+
+    // Re-initialize so the new promotion name is picked up everywhere
+    initState();
+    updatePromotionHeader();
+}
+
+function newGame() {
+    // Legacy fallback if needed
+    if (confirm("Start a completely new game? This will erase your current promotion.")) {
+        localStorage.clear();
+        location.reload();
+    }
+}
+
+function returnToMainMenu() {
+    document.getElementById('game-content').style.display = 'none';
+    document.getElementById('main-menu').style.display = 'flex';
+}
+
+function initAccessibility() {
+    applyAccessibilitySettings();
+}
+
+function updatePromotionHeader() {
+    const nameEl = document.getElementById('promo-name-display');
+    const locEl = document.getElementById('promo-location-display');
+
+    if (nameEl) nameEl.textContent = (state.promotionName || "P&G Global").toUpperCase();
+    if (locEl) locEl.textContent = state.promotionLocation || "Chicago, Illinois";
+}
+
+// === BOOKING DROPDOWNS (small helpers) ===
+function populateTitleStakes() {
+    const sel = document.getElementById('match-stakes');
+    if (!sel) return;
+    sel.innerHTML = '';
+    // Exhibition (no title)
+    sel.add(new Option("EXHIBITION (NO STAKES)", "exhibition"));
+
+    // All defined titles
+    Object.values(TITLES).forEach(title => {
+        const opt = new Option(title.name, title.key);
+        sel.add(opt);
+    });
+}
+
+function populateMatchTypes() {
+    const sel = document.getElementById('match-type');
+    if (!sel) return;
+    sel.innerHTML = '';
+    MATCH_TYPES.forEach(mt => {
+        const opt = new Option(mt.label, mt.value);
+        sel.add(opt);
+    });
+
+    // Ensure tag selectors start in the correct visibility state
+    if (typeof toggleTagUI === 'function') {
+        toggleTagUI();
+    }
+}
+
+// === SMALL REMAINING UI PIECES ===
+
+const headlines = [
+    "DIRTSHEETS: RUMORS OF A BACKSTAGE ALTERCATION...",
+    "MARKET WATCH: INDIE TICKETS SELLING FAST.",
+    "FAN POLL: WHO IS THE NEXT BREAKOUT STAR?",
+    "VIBE CHECK: THE LOCKER ROOM IS FEELING THE HYPE!",
+    "SYNDICATE PRO CEO CLAIMS P&G IS A 'SINKING SHIP'."
+];
+
+function updateTicker() {
+    const ticker = document.getElementById('news-ticker');
+    let currentNews = [...headlines];
+    if (state.roster.length > 0) currentNews.push(`SCOOP: ${state.roster[0].name} MIGHT DEFECT TO SYNDICATE PRO?`);
+    if (state.champIdx !== -1 && state.roster[state.champIdx]) currentNews.push(`WORLD CHAMP WATCH: ${state.roster[state.champIdx].name} REFUSES TO DROP THE BELT.`);
+    ticker.innerHTML = currentNews.map(h => `<span class="ticker-item">${h}</span>`).join("");
+}
+
+// Extend initializeGame to include the last small wiring
+function initializeGame() {
+    initVenues();
+    initTabs();
+    populateMatchTypes();
+    populateTitleStakes();
+    updateUI();
+    renderFullRoster();
+
+    // Initialize accessibility + main menu behavior
+    initAccessibility();
+
+    // Dynamically set promotion name in the main menu title (for returning players)
+    const menuTitle = document.getElementById('main-menu-title');
+    if (menuTitle && state.promotionName) {
+        menuTitle.textContent = state.promotionName.toUpperCase();
+    }
+
+    // Final small wiring that used to be at the bottom
+    setInterval(() => {
+        if (state.medLvl > 0) {
+            state.roster.forEach(w => {
+                if (w.stamina < 100) w.stamina = Math.min(100, w.stamina + (state.medLvl * 0.4));
+            });
+            save();
+            updateUI();
+        }
+    }, 5000);
+
+    document.getElementById('upgrade-med-btn').onclick = () => {
+        let c = 1500 * (state.medLvl + 1);
+        if (state.funds >= c) {
+            state.funds -= c;
+            state.medLvl++;
+            save();
+            updateUI();
+        }
+    };
+
+    if (state.market.length === 0) refreshMarket();
+
+    // Medical passive healing interval (was at the very bottom of index.html)
+    setInterval(() => {
+        if (state.medLvl > 0) {
+            state.roster.forEach(w => {
+                if (w.stamina < 100) w.stamina = Math.min(100, w.stamina + (state.medLvl * 0.4));
+            });
+            save();
+            updateUI();
+        }
+    }, 5000);
+
+    // Medical upgrade button wiring
+    document.getElementById('upgrade-med-btn').onclick = () => {
+        let c = 1500 * (state.medLvl + 1);
+        if (state.funds >= c) {
+            state.funds -= c;
+            state.medLvl++;
+            save();
+            updateUI();
+        }
+    };
+
+    // Last remaining wiring from index.html (booking buttons)
+    document.getElementById('add-card-btn').addEventListener('click', () => {
+        addSegmentToCard();
+    });
+
+    document.getElementById('execute-show-btn').addEventListener('click', () => {
+        executeShow();
+    });
+
+    // On first load, show main menu instead of jumping straight in
+    // (We already have the menu visible by default via inline style)
+}
+
+// === NEWS TICKER ===
+const headlines = [
+    "DIRTSHEETS: RUMORS OF A BACKSTAGE ALTERCATION...",
+    "MARKET WATCH: INDIE TICKETS SELLING FAST.",
+    "FAN POLL: WHO IS THE NEXT BREAKOUT STAR?",
+    "VIBE CHECK: THE LOCKER ROOM IS FEELING THE HYPE!",
+    "SYNDICATE PRO CEO CLAIMS P&G IS A 'SINKING SHIP'."
+];
+
+function updateTicker() {
+    const ticker = document.getElementById('news-ticker');
+    let currentNews = [...headlines];
+    if (state.roster.length > 0) currentNews.push(`SCOOP: ${state.roster[0].name} MIGHT DEFECT TO SYNDICATE PRO?`);
+    if (state.champIdx !== -1 && state.roster[state.champIdx]) currentNews.push(`WORLD CHAMP WATCH: ${state.roster[state.champIdx].name} REFUSES TO DROP THE BELT.`);
+    ticker.innerHTML = currentNews.map(h => `<span class="ticker-item">${h}</span>`).join("");
 }
