@@ -42,6 +42,7 @@ function save() {
     localStorage.setItem('pg2_active_promos', JSON.stringify(state.activePromos));
     localStorage.setItem('pg2_promotion_name', state.promotionName);
     localStorage.setItem('pg2_promotion_location', state.promotionLocation);
+    localStorage.setItem('pg2_last_show', JSON.stringify(state.lastShow || null));
 }
 
 function load() {
@@ -70,6 +71,9 @@ function load() {
 
     state.promotionName = localStorage.getItem('pg2_promotion_name') || "P&G Global";
     state.promotionLocation = localStorage.getItem('pg2_promotion_location') || "Chicago, IL";
+
+    const lastShowRaw = localStorage.getItem('pg2_last_show');
+    state.lastShow = lastShowRaw ? JSON.parse(lastShowRaw) : null;
 }
 
 // === SAVE MIGRATION + WELCOME BACK BONUS ===

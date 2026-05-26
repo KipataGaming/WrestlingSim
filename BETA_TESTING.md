@@ -1,53 +1,76 @@
 # P&G Global // Showrunner Terminal
-## Beta v0.9 — Testing Guide & Known Issues
+## Beta Testing Notes (Post-Modular Split)
 
-**Version**: Beta v0.9  
-**Date**: Current development session  
-**Goal**: Gather real play feedback on the core loop before investing more credits in deeper refactors or new features.
-
-This document is the single source of truth for what is ready to test and what is still rough.
+**Current Phase**: Major refactoring largely complete  
+**Goal**: Stabilize the now-modular codebase and gather feedback on gameplay feel before adding significant new features.
 
 ---
 
-## Current Playable State
+## Current State of the Codebase
 
-The game has reached a point where a tester can complete full 30–90 minute sessions:
+The original ~2380-line monolithic `index.html` has been successfully broken down:
 
-- Start a new game with custom promotion name + home location
-- Manage and grow a roster (Free Agency + full "Create New Wrestler" form with alignment/archetype/stats)
-- Book exactly 6-segment shows with a **prominent, scannable CURRENT SHOW CARD** (green-bordered, shows type badges, extras tags, reorder/cancel controls)
-- Broadcast the show and receive meaningfully labeled post-show results (match type + [PROMO / WEAPONS / REF BUMP / RUN-IN] + title stakes)
-- Experience live events, title changes, and post-PPV contract negotiations
-- Use the Medical tab + heal dropdown to actually restore stamina + happiness
-- Toggle accessibility options (text size, high contrast, reduce motion, simplify UI) — important for the developer who has MS
+- `js/data.js` — All static data (MATCH_TYPES, TITLES, VENUES, WORKOUTS, etc.)
+- `js/state.js` — Core state, persistence, migration, welcome-back bonus
+- `js/ui.js` — Rendering, Creative HQ, roster editing, promo tools, initialization
+- `js/booking.js` — Full broadcast pipeline, live events, contracts, market/free agency, title changes
 
-Recent stabilizations (see CHANGELOG.md):
-- CURRENT SHOW CARD visibility overhaul
-- Results log now clearly labels what happened each segment
-- Heal button actually heals (dropdown + stamina + happiness restore)
-- New Game button flows directly into the game
-- Create New Wrestler form added
-- Beta v0.9 banner with short testing instructions in the main menu
+`index.html` is now mostly clean HTML + a tiny bootstrap script.
 
-The core "book a show → watch the consequences" loop is functional and worth testing.
+The split is considered functionally complete for now.
 
 ---
 
-## Known Issues & Rough Edges (Report These!)
+## What Works Well
 
-These are the areas that are intentionally left "good enough for beta" due to limited credits. They are the highest-priority items for future polish.
+- Booking flow with prominent CURRENT SHOW CARD
+- Broadcast → results loop (including live events and post-PPV contracts)
+- Roster management (Free Agency + Create New Wrestler)
+- Medical / healing system
+- Accessibility options
+- Multiple shows in a row (including PPV runs)
 
-### 1. Live Events & RNG (resolveLiveEvents)
-- Weather cancellations use venue.weatherRisk but the effect can feel arbitrary — a match you carefully built can simply disappear with little player agency.
-- Backstage attacks hit a random roster member (not necessarily someone on the card).
-- Surprise moments ("REF BUMP", "RUN-IN") are forcibly injected into random segments of the card you just built. The system mutates `processedCard` after you have seen the rundown.
-- Feedback in the log is decent, but there is no pre-broadcast warning or visual indication on the CURRENT SHOW CARD that chaos is about to hit.
-- **Testing focus**: Build a few shows, enable PPV, watch what actually gets cancelled or altered. Does it feel fair or frustrating?
+---
 
-### 2. Post-PPV Contract Negotiations (the jankiest UX)
-- Triggered only when the "This is a PAY-PER-VIEW" checkbox is checked before broadcast.
-- Uses old-school blocking `confirm()` and `alert()` browser dialogs for every demanding wrestler (happiness < 60). This is 1990s-era UX and can stack poorly.
-- Demands scale with popularity + low happiness + bad attitude, but the exact math and "promises" tracking are opaque to the player.
+## Known Rough Edges / Future Polish
+
+### Live Events
+- Still the most "chaotic" system. Weather cancellations and forced spots can feel arbitrary.
+- No strong pre-broadcast risk visualization on the show card.
+
+### Post-PPV Contracts
+- The in-page panel is much better than the old blocking `confirm()` spam, but the UX can still be improved (e.g., better demand clarity, bulk actions).
+
+### Polish & Quality of Life
+- Last Show Recap is basic (good start, can be richer).
+- Market / Free Agency could use better filtering or history.
+- More visual feedback on long-term roster trends would be nice.
+
+### Technical Debt
+- A few old inline comments and minor inconsistencies remain (minor cleanup only).
+- No automated tests yet.
+
+---
+
+## Recommended Testing Focus
+
+1. Play several full "seasons" (multiple shows, PPVs, roster turnover).
+2. Pay special attention to how live events feel after you've carefully built a card.
+3. Try the Create New Wrestler flow and see if the data-driven constraints feel good.
+4. Use accessibility settings if you have any visual or motor considerations.
+
+---
+
+## Next Priorities (Once Feedback is Gathered)
+
+- Deeper live events agency / telegraphing
+- Contract negotiation UX improvements
+- Richer progression / meta systems
+- More Last Show / career history visibility
+
+Report any crashes, broken flows, confusing mechanics, or "this feels bad" moments. Gameplay feel feedback is currently more valuable than "this code could be cleaner" notes.
+
+Thank you for testing!
 - Refusal sets a `refusing: true` flag. The wrestler is then completely blocked from future booking until the player manually improves their happiness in Medical or triggers another contract talk.
 - No good persistent view of active promises or "owed" pushes/title shots.
 - Funds check uses `demandedRaise * 2` (the multiplier feels arbitrary).
