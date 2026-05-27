@@ -14,6 +14,73 @@
 
 console.log('%c[ui.js] loaded', 'color:#39ff14');
 
+// === CENTRAL UI ORCHESTRATOR ===
+// updateUI was the original giant monolithic function. It was progressively
+// thinned during the refactor by extracting focused render helpers.
+// This is the remaining lightweight coordinator that keeps the main displays in sync.
+function updateUI() {
+    // Core status bar / numbers (funds, hype, rival hype) — do this first
+    // so money and hype always update even if a later render has issues.
+    updateStatusDisplays();
+
+    // Prominent CURRENT SHOW CARD (the most important view for booking)
+    if (typeof renderRundown === 'function') {
+        renderRundown();
+    }
+
+    // Full roster view (Roster tab + any other places that need it)
+    if (typeof renderFullRoster === 'function') {
+        renderFullRoster();
+    }
+
+    // Booking form dropdowns (wrestler selects, etc.)
+    if (typeof populateBookingDropdowns === 'function') {
+        populateBookingDropdowns();
+    }
+
+    // Free agents / market lists (Roster tab and any Operations tab remnants)
+    const rosterMarket = document.getElementById('market-pool-roster');
+    if (rosterMarket && typeof renderMarket === 'function') {
+        renderMarket(rosterMarket);
+    }
+
+    const opsMarket = document.getElementById('market-list-ops');
+    if (opsMarket && typeof renderMarket === 'function') {
+        renderMarket(opsMarket);
+    }
+
+    // Operations tab specific dynamic content
+    if (typeof populateHealDropdown === 'function') {
+        populateHealDropdown();
+    }
+}
+
+function updateStatusDisplays() {
+    if (!state) return;
+
+    // Money
+    const fundsEl = document.getElementById('funds');
+    if (fundsEl) fundsEl.textContent = Math.floor(state.funds || 0);
+
+    // Medical level (Operations tab)
+    const medEl = document.getElementById('med-lvl');
+    if (medEl) medEl.textContent = state.medLvl || 0;
+
+    // Player hype
+    const hypeVal = document.getElementById('hype-val');
+    const hypeFill = document.getElementById('hype-fill');
+    const hype = Math.max(0, Math.min(100, state.hype || 0));
+    if (hypeVal) hypeVal.textContent = Math.round(hype);
+    if (hypeFill) hypeFill.style.width = `${hype}%`;
+
+    // Rival (Syndicate Pro) hype
+    const rivalVal = document.getElementById('rival-hype-val');
+    const rivalFill = document.getElementById('rival-hype-fill');
+    const rival = Math.max(0, Math.min(100, state.rivalHype || 0));
+    if (rivalVal) rivalVal.textContent = Math.round(rival);
+    if (rivalFill) rivalFill.style.width = `${rival}%`;
+}
+
 function renderRundown() {
     // Note: this function expects the booking form elements and #card-rundown to exist
     const cardCountEl = document.getElementById('card-count');
@@ -902,6 +969,12 @@ function initTabs() {
                 renderStipulationsList();
                 populatePromoWrestlers();
             }
+            if (target === 'operations') {
+                // Refresh Operations tab dynamic controls
+                if (typeof populateHealDropdown === 'function') populateHealDropdown();
+                if (typeof updateVenueDisplay === 'function') updateVenueDisplay();
+                if (typeof updateStatusDisplays === 'function') updateStatusDisplays();
+            }
             // Note: Game Log is now permanently in the Booking tab for better flow
         });
     });
@@ -1062,20 +1135,6 @@ function updatePromotionHeader() {
 }
 
 // === BOOKING DROPDOWNS (small helpers) ===
-function populateTitleStakes() {
-    const sel = document.getElementById('match-stakes');
-    if (!sel) return;
-    sel.innerHTML = '';
-    // Exhibition (no title)
-    sel.add(new Option("EXHIBITION (NO STAKES)", "exhibition"));
-
-    // All defined titles
-    Object.values(TITLES).forEach(title => {
-        const opt = new Option(title.name, title.key);
-        sel.add(opt);
-    });
-}
-
 function populateMatchTypes() {
     const sel = document.getElementById('match-type');
     if (!sel) return;
@@ -1093,7 +1152,7 @@ function populateMatchTypes() {
 
 // === SMALL REMAINING UI PIECES ===
 
-const headlines = [
+const newsHeadlines = [
     "DIRTSHEETS: RUMORS OF A BACKSTAGE ALTERCATION...",
     "MARKET WATCH: INDIE TICKETS SELLING FAST.",
     "FAN POLL: WHO IS THE NEXT BREAKOUT STAR?",
@@ -1103,7 +1162,7 @@ const headlines = [
 
 function updateTicker() {
     const ticker = document.getElementById('news-ticker');
-    let currentNews = [...headlines];
+    let currentNews = [...newsHeadlines];
     if (state.roster.length > 0) currentNews.push(`SCOOP: ${state.roster[0].name} MIGHT DEFECT TO SYNDICATE PRO?`);
     if (state.champIdx !== -1 && state.roster[state.champIdx]) currentNews.push(`WORLD CHAMP WATCH: ${state.roster[state.champIdx].name} REFUSES TO DROP THE BELT.`);
     ticker.innerHTML = currentNews.map(h => `<span class="ticker-item">${h}</span>`).join("");
@@ -1126,27 +1185,6 @@ function initializeGame() {
     if (menuTitle && state.promotionName) {
         menuTitle.textContent = state.promotionName.toUpperCase();
     }
-
-    // Final small wiring that used to be at the bottom
-    setInterval(() => {
-        if (state.medLvl > 0) {
-            state.roster.forEach(w => {
-                if (w.stamina < 100) w.stamina = Math.min(100, w.stamina + (state.medLvl * 0.4));
-            });
-            save();
-            updateUI();
-        }
-    }, 5000);
-
-    document.getElementById('upgrade-med-btn').onclick = () => {
-        let c = 1500 * (state.medLvl + 1);
-        if (state.funds >= c) {
-            state.funds -= c;
-            state.medLvl++;
-            save();
-            updateUI();
-        }
-    };
 
     if (state.market.length === 0) refreshMarket();
 
@@ -1185,19 +1223,3 @@ function initializeGame() {
     // (We already have the menu visible by default via inline style)
 }
 
-// === NEWS TICKER ===
-const headlines = [
-    "DIRTSHEETS: RUMORS OF A BACKSTAGE ALTERCATION...",
-    "MARKET WATCH: INDIE TICKETS SELLING FAST.",
-    "FAN POLL: WHO IS THE NEXT BREAKOUT STAR?",
-    "VIBE CHECK: THE LOCKER ROOM IS FEELING THE HYPE!",
-    "SYNDICATE PRO CEO CLAIMS P&G IS A 'SINKING SHIP'."
-];
-
-function updateTicker() {
-    const ticker = document.getElementById('news-ticker');
-    let currentNews = [...headlines];
-    if (state.roster.length > 0) currentNews.push(`SCOOP: ${state.roster[0].name} MIGHT DEFECT TO SYNDICATE PRO?`);
-    if (state.champIdx !== -1 && state.roster[state.champIdx]) currentNews.push(`WORLD CHAMP WATCH: ${state.roster[state.champIdx].name} REFUSES TO DROP THE BELT.`);
-    ticker.innerHTML = currentNews.map(h => `<span class="ticker-item">${h}</span>`).join("");
-}

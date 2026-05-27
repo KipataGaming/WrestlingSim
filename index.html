@@ -445,8 +445,9 @@
         // save() is now provided by js/state.js (and called internally by other functions there).
         // The old duplicate definition has been removed as part of the monolith refactor.
 
+        // Thin global helpers that are still needed
         function wipeDatabase() {
-            if(confirm("CRITICAL WARNING: This will erase your promotion and start a New Game. Are you sure?")) {
+            if (confirm("CRITICAL WARNING: This will erase your promotion and start a New Game. Are you sure?")) {
                 localStorage.clear();
                 location.reload();
             }
@@ -457,51 +458,8 @@
             lb.innerHTML = `> ${msg}<br>` + lb.innerHTML;
         }
 
-        // toggleTagUI moved to js/ui.js
-
-        function updateUI() {
-            if(isNaN(state.funds)) state.funds = 5000;
-
-            document.getElementById('funds').innerText = Math.floor(state.funds);
-            document.getElementById('med-lvl').innerText = state.medLvl;
-            
-            document.getElementById('hype-val').innerText = state.hype;
-            document.getElementById('hype-fill').style.width = state.hype + "%";
-            document.getElementById('rival-hype-val').innerText = state.rivalHype;
-            document.getElementById('rival-hype-fill').style.width = state.rivalHype + "%";
-
-            // Last Show Recap (new)
-            if (typeof renderLastShowRecap === 'function') renderLastShowRecap();
-
-            document.getElementById('upgrade-med-btn').innerText = `UPGRADE ($${1500 * (state.medLvl + 1)})`;
-            document.getElementById('upgrade-med-btn').disabled = state.funds < (1500 * (state.medLvl + 1));
-
-            // Booking dropdowns (now in js/ui.js)
-            populateBookingDropdowns();
-
-            // Also refresh the new rich roster if it's currently visible
-            const rosterTab = document.getElementById('tab-roster');
-            if (rosterTab && rosterTab.classList.contains('active')) {
-                renderFullRoster();
-            }
-
-            // Update both the old Operations location and the new Roster location
-            // renderMarket now lives in js/ui.js
-            const mDispOld = document.getElementById('market-pool');
-            const mDispRoster = document.getElementById('market-pool-roster');
-            if (mDispOld) renderMarket(mDispOld);
-            if (mDispRoster) renderMarket(mDispRoster);
-
-            // Populate heal dropdown (now lives in js/ui.js)
-            populateHealDropdown();
-
-            // Populate Create New Wrestler form dropdowns (now in js/ui.js)
-            populateCreateWrestlerForm();
-
-            // CURRENT SHOW CARD rendering now lives in js/ui.js (extracted during the split)
-            if (typeof renderRundown === 'function') renderRundown();
-        }
-
+        // Everything else has been moved to the modules.
+        // The only initialization call left:
         initializeGame();
     </script>
 </body>

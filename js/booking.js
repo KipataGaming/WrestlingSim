@@ -240,8 +240,8 @@ function simulateSegment(match, participants) {
     // V2.1 WORKRATE NERF: RNG adds slight chaos (-0.2 to +0.3).
     let finalStars = rating + ((Math.random() * 0.5) - 0.2);
 
-    // Strict 5.0 Cap
-    finalStars = Math.min(5.0, Math.max(0.5, finalStars)).toFixed(1);
+    // Strict 5.0 Cap - keep as number for calculations, format only for display
+    finalStars = Math.min(5.0, Math.max(0.5, finalStars));
 
     const starsHTML = "★".repeat(Math.floor(finalStars)) + (finalStars % 1 >= 0.5 ? "½" : "");
 
@@ -404,6 +404,13 @@ function processPostBroadcast(data) {
     const sponsorBonus = Math.floor(avgRatingNum * 95 + ((state.hype || 0) * 2.5));
     state.funds += sponsorBonus;
     log(`Sponsor & Merch bonus: +$${sponsorBonus}`);
+
+    // Force the funds display update here (defensive, in case the general
+    // updateUI path has transient issues after complex broadcasts).
+    const fundsEl = document.getElementById('funds');
+    if (fundsEl) {
+        fundsEl.textContent = Math.floor(state.funds || 0);
+    }
 
     // === PASSIVE ROSTER DECAY (small, realistic locker room fatigue) ===
     if (state.roster && state.roster.length > 0) {
@@ -697,6 +704,12 @@ function executeShow() {
 
     save(); 
     updateUI();  // includes renderRundown()
+
+    // Extra defensive funds display update after shows.
+    const fundsEl2 = document.getElementById('funds');
+    if (fundsEl2) {
+        fundsEl2.textContent = Math.floor(state.funds || 0);
+    }
 }
 
 // === FREE AGENCY / MARKET ===
